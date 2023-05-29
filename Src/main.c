@@ -90,6 +90,7 @@ typedef struct {
 }checkSumArr;
 checkSumArr initCheckSumArrF(uint8_t* marr, uint8_t mlen);
 void restoreBackupArray(uint8_t* marr, uint8_t* marrBackup, uint8_t mlen);
+void checkStatic();
 uint8_t checkSumArrF(checkSumArr mstruct);
 uint8_t flagCheckSum;
 
@@ -153,7 +154,7 @@ uint8_t calculateAllCheckSum();	// TODO
 //LED
 uint8_t PASS_Buffer[8] = {0xCE, 0xEE, 0xB6, 0xB6, 0, 0, 0, 0};
 uint8_t ERROR_Buffer[8] = {0x9E, 0xEE, 0xEE, 0xFC, 0xEE, 0, 0, 0};
-unsigned char seg7code[10]={ 0xFC,0x0C,0xDA,0xF2,0x66,0xB6,0xBE,0xE0,0xFE,0xE6}; //数码管字根
+//unsigned char seg7code[10]={ 0xFC,0x0C,0xDA,0xF2,0x66,0xB6,0xBE,0xE0,0xFE,0xE6}; //数码管字根
 uint8_t ZERO_Buffer[8] = {0, 0, 0, 0, 0, 0, 0, 0};
 void ledPass();
 void ledError();
@@ -166,6 +167,11 @@ void hotStart();
 //backup
 uint8_t num1Backup[0x20] = {0, 13, 14, 15, 16, 0, 0, 0, 0, 12, 9, 8, 7, 0, 0, 0,\
 					  0, 11, 6, 5, 4, 0, 0, 0, 0, 10, 3, 2, 1, 0, 0, 0};
+uint8_t PASS_BufferBackup[8] = {0xCE, 0xEE, 0xB6, 0xB6, 0, 0, 0, 0};
+uint8_t ERROR_BufferBackup[8] = {0x9E, 0xEE, 0xEE, 0xFC, 0xEE, 0, 0, 0};
+//unsigned char seg7codeBackup[10]={ 0xFC,0x0C,0xDA,0xF2,0x66,0xB6,0xBE,0xE0,0xFE,0xE6}; //数码管字根
+uint8_t ZERO_BufferBackup[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+
 
 int main(void)
 {
@@ -191,6 +197,12 @@ int main(void)
 	// checksum
 	checkSumArr mArrNum1 = initCheckSumArrF(num1, 32);
 	checkSumArr mArrNum1Backup = initCheckSumArrF(num1Backup, 32);
+	checkSumArr mArrPASS_Buffer = initCheckSumArrF(PASS_Buffer, 8);
+	checkSumArr mArrPASS_BufferBackup = initCheckSumArrF(PASS_BufferBackup, 8);
+	checkSumArr mArrERROR_Buffer = initCheckSumArrF(ERROR_Buffer, 8);
+	checkSumArr mArrERROR_BufferBackup = initCheckSumArrF(ERROR_BufferBackup, 8);
+	checkSumArr mArrZERO_Buffer = initCheckSumArrF(ZERO_Buffer, 8);
+	checkSumArr mArrZERO_BufferBackup = initCheckSumArrF(ZERO_BufferBackup, 8);
 	flagCheckSum = 2;
 
 	ledClean();
@@ -231,16 +243,7 @@ int main(void)
 
 			//校验码检验模块
 			if(flagCheckSum++ == 12) {
-				flagCheckSum = checkSumArrF(mArrNum1);
-				if (flagCheckSum == 1){
-					printf("checkSumErrorMArr1");
-					restoreBackupArray(num1, num1Backup, 32);
-				}
-				flagCheckSum = checkSumArrF(mArrNum1Backup);
-				if (flagCheckSum == 1){
-					printf("checkSumErrorMArr1");
-					restoreBackupArray(num1Backup, num1, 32);
-				}
+				checkStatic();
 				flagCheckSum = 2;
 			}
 
@@ -551,6 +554,49 @@ void restoreBackupArray(uint8_t* marr, uint8_t* marrBackup, uint8_t mlen){
 	}
 }
 
+void checkStatic(){
+	flagCheckSum = checkSumArrF(mArrNum1);
+	if (flagCheckSum == 1){
+		printf("checkSumErrorMArr1");
+		restoreBackupArray(num1, num1Backup, 32);
+	}
+	flagCheckSum = checkSumArrF(mArrNum1Backup);
+	if (flagCheckSum == 1){
+		printf("checkSumErrorMArr1");
+		restoreBackupArray(num1Backup, num1, 32);
+	}
+	flagCheckSum = checkSumArrF(mArrPASS_Buffer);
+	if (flagCheckSum == 1){
+		printf("checkSumErrorMArr1");
+		restoreBackupArray(PASS_Buffer, PASS_BufferBackup, 8);
+	}
+	flagCheckSum = checkSumArrF(mArrPASS_BufferBackup);
+	if (flagCheckSum == 1){
+		printf("checkSumErrorMArr1");
+		restoreBackupArray(PASS_BufferBackup, PASS_Buffer, 8);
+	}
+	flagCheckSum = checkSumArrF(mArrERROR_Buffer);
+	if (flagCheckSum == 1){
+		printf("checkSumErrorMArr1");
+		restoreBackupArray(ERROR_Buffer, ERROR_BufferBackup, 8);
+	}
+	flagCheckSum = checkSumArrF(mArrERROR_BufferBackup);
+	if (flagCheckSum == 1){
+		printf("checkSumErrorMArr1");
+		restoreBackupArray(ERROR_BufferBackup, ERROR_Buffer, 8);
+	}
+	flagCheckSum = checkSumArrF(mArrZERO_Buffer);
+	if (flagCheckSum == 1){
+		printf("checkSumErrorMArr1");
+		restoreBackupArray(ZERO_Buffer, ZERO_BufferBackup, 8);
+	}
+	flagCheckSum = checkSumArrF(mArrZERO_BufferBackup);
+	if (flagCheckSum == 1){
+		printf("checkSumErrorMArr1");
+		restoreBackupArray(ZERO_BufferBackup, ZERO_Buffer, 8);
+	}
+}
+
 // restart
 void minit(){
 	HAL_Init();
@@ -696,184 +742,6 @@ void swtich_key(void)	// 使用buf向switch 赋值
 	}
 }
 
-//void switch_flag(void){
-//	switch(flag){
-//			case 1:
-//				Tx1_Buffer[0] = 0x0c;
-//				if(Rx2_Buffer[0] == 0)
-//					{
-//						I2C_ZLG7290_Write(&hi2c1,0x70,ZLG_WRITE_ADDRESS1,Tx1_Buffer,1);
-//					}
-//					else
-//					{									
-//						I2C_ZLG7290_Write(&hi2c1,0x70,ZLG_WRITE_ADDRESS2,Rx2_Buffer,BUFFER_SIZE2);	
-//						I2C_ZLG7290_Write(&hi2c1,0x70,ZLG_WRITE_ADDRESS1,Tx1_Buffer,1);					
-//					}
-//				break;
-//			case 2:
-//				Tx1_Buffer[0] = 0xDA;
-//				if(Rx2_Buffer[0] == 0)
-//					{
-//						I2C_ZLG7290_Write(&hi2c1,0x70,ZLG_WRITE_ADDRESS1,Tx1_Buffer,1);
-//					}
-//					else
-//					{
-//						I2C_ZLG7290_Write(&hi2c1,0x70,ZLG_WRITE_ADDRESS2,Rx2_Buffer,BUFFER_SIZE2);
-//						I2C_ZLG7290_Write(&hi2c1,0x70,ZLG_WRITE_ADDRESS1,Tx1_Buffer,1);		
-//					}
-//				break;
-//			case 3:
-//				Tx1_Buffer[0] = 0xF2;
-//				if(Rx2_Buffer[0] == 0)
-//					{
-//						I2C_ZLG7290_Write(&hi2c1,0x70,ZLG_WRITE_ADDRESS1,Tx1_Buffer,1);
-//					}
-//					else
-//					{
-//						I2C_ZLG7290_Write(&hi2c1,0x70,ZLG_WRITE_ADDRESS2,Rx2_Buffer,BUFFER_SIZE2);						
-//						I2C_ZLG7290_Write(&hi2c1,0x70,ZLG_WRITE_ADDRESS1,Tx1_Buffer,1);		
-//					}
-//				break;
-//			case 4:
-//				Tx1_Buffer[0] = 0x66;
-//				if(Rx2_Buffer[0] == 0)
-//					{
-//						I2C_ZLG7290_Write(&hi2c1,0x70,ZLG_WRITE_ADDRESS1,Tx1_Buffer,1);
-//					}
-//					else
-//					{
-//						I2C_ZLG7290_Write(&hi2c1,0x70,ZLG_WRITE_ADDRESS2,Rx2_Buffer,BUFFER_SIZE2);						
-//						I2C_ZLG7290_Write(&hi2c1,0x70,ZLG_WRITE_ADDRESS1,Tx1_Buffer,1);					
-//					}
-//				break;
-//			case 5:
-//				Tx1_Buffer[0] = 0xB6;
-//				if(Rx2_Buffer[0] == 0)
-//					{
-//						I2C_ZLG7290_Write(&hi2c1,0x70,ZLG_WRITE_ADDRESS1,Tx1_Buffer,1);
-//					}
-//					else
-//					{
-//						I2C_ZLG7290_Write(&hi2c1,0x70,ZLG_WRITE_ADDRESS2,Rx2_Buffer,BUFFER_SIZE2);
-//						I2C_ZLG7290_Write(&hi2c1,0x70,ZLG_WRITE_ADDRESS1,Tx1_Buffer,1);						
-//					}
-//				break;
-//			case 6:
-//				Tx1_Buffer[0] = 0xBE;
-//				if(Rx2_Buffer[0] == 0)
-//					{
-//						I2C_ZLG7290_Write(&hi2c1,0x70,ZLG_WRITE_ADDRESS1,Tx1_Buffer,1);
-//					}
-//					else
-//					{
-//						I2C_ZLG7290_Write(&hi2c1,0x70,ZLG_WRITE_ADDRESS2,Rx2_Buffer,BUFFER_SIZE2);						
-//						I2C_ZLG7290_Write(&hi2c1,0x70,ZLG_WRITE_ADDRESS1,Tx1_Buffer,1);						
-//					}
-//				break;
-//			case 7:
-//				Tx1_Buffer[0] = 0xE0;
-//				if(Rx2_Buffer[0] == 0)
-//					{
-//						I2C_ZLG7290_Write(&hi2c1,0x70,ZLG_WRITE_ADDRESS1,Tx1_Buffer,1);
-//					}
-//					else
-//					{
-//						I2C_ZLG7290_Write(&hi2c1,0x70,ZLG_WRITE_ADDRESS2,Rx2_Buffer,BUFFER_SIZE2);
-//						I2C_ZLG7290_Write(&hi2c1,0x70,ZLG_WRITE_ADDRESS1,Tx1_Buffer,1);						
-//					}
-//				break;
-//			case 8:
-//				Tx1_Buffer[0] = 0xFE;
-//				if(Rx2_Buffer[0] == 0)
-//					{
-//						I2C_ZLG7290_Write(&hi2c1,0x70,ZLG_WRITE_ADDRESS1,Tx1_Buffer,1);
-//					}
-//					else
-//					{
-//						I2C_ZLG7290_Write(&hi2c1,0x70,ZLG_WRITE_ADDRESS2,Rx2_Buffer,BUFFER_SIZE2);					
-//						I2C_ZLG7290_Write(&hi2c1,0x70,ZLG_WRITE_ADDRESS1,Tx1_Buffer,1);							
-//					}
-//				break;
-//			case 9:
-//				Tx1_Buffer[0] = 0xE6;
-//				if(Rx2_Buffer[0] == 0)
-//					{
-//						I2C_ZLG7290_Write(&hi2c1,0x70,ZLG_WRITE_ADDRESS1,Tx1_Buffer,1);
-//					}
-//					else
-//					{
-//						I2C_ZLG7290_Write(&hi2c1,0x70,ZLG_WRITE_ADDRESS2,Rx2_Buffer,BUFFER_SIZE2);					
-//						I2C_ZLG7290_Write(&hi2c1,0x70,ZLG_WRITE_ADDRESS1,Tx1_Buffer,1);					
-//					}
-//				break;
-//			case 10:
-//				Tx1_Buffer[0] = 0xEE;
-//				if(Rx2_Buffer[0] == 0)
-//					{
-//						I2C_ZLG7290_Write(&hi2c1,0x70,ZLG_WRITE_ADDRESS1,Tx1_Buffer,1);
-//					}
-//					else
-//					{
-//						I2C_ZLG7290_Write(&hi2c1,0x70,ZLG_WRITE_ADDRESS2,Rx2_Buffer,BUFFER_SIZE2);					
-//						I2C_ZLG7290_Write(&hi2c1,0x70,ZLG_WRITE_ADDRESS1,Tx1_Buffer,1);						
-//					}
-//				break;
-//			case 11:
-//				Tx1_Buffer[0] = 0x3E;
-//				if(Rx2_Buffer[0] == 0)
-//					{
-//						I2C_ZLG7290_Write(&hi2c1,0x70,ZLG_WRITE_ADDRESS1,Tx1_Buffer,1);
-//					}
-//					else
-//					{
-//						I2C_ZLG7290_Write(&hi2c1,0x70,ZLG_WRITE_ADDRESS2,Rx2_Buffer,BUFFER_SIZE2);							
-//						I2C_ZLG7290_Write(&hi2c1,0x70,ZLG_WRITE_ADDRESS1,Tx1_Buffer,1);						
-//					}
-//				break;
-//					case 12:
-//				Tx1_Buffer[0] = 0x9C;
-//				if(Rx2_Buffer[0] == 0)
-//					{
-//						I2C_ZLG7290_Write(&hi2c1,0x70,ZLG_WRITE_ADDRESS1,Tx1_Buffer,1);
-//					}
-//					else
-//					{
-//						I2C_ZLG7290_Write(&hi2c1,0x70,ZLG_WRITE_ADDRESS2,Rx2_Buffer,BUFFER_SIZE2);						
-//						I2C_ZLG7290_Write(&hi2c1,0x70,ZLG_WRITE_ADDRESS1,Tx1_Buffer,1);								
-//					}
-//				break;
-//					case 13:
-//				Tx1_Buffer[0] = 0x7A;
-//				if(Rx2_Buffer[0] == 0)
-//					{
-//						I2C_ZLG7290_Write(&hi2c1,0x70,ZLG_WRITE_ADDRESS1,Tx1_Buffer,1);
-//					}
-//					else
-//					{
-//						I2C_ZLG7290_Write(&hi2c1,0x70,ZLG_WRITE_ADDRESS2,Rx2_Buffer,BUFFER_SIZE2);						
-//						I2C_ZLG7290_Write(&hi2c1,0x70,ZLG_WRITE_ADDRESS1,Tx1_Buffer,1);									
-//					}
-//				break;
-//					case 14:
-//							Tx1_Buffer[0] = 0x00;
-//							I2C_ZLG7290_Write(&hi2c1,0x70,ZLG_WRITE_ADDRESS1,Tx1_Buffer,8);
-//						break;
-//					case 15:
-//				Tx1_Buffer[0] = 0xFC;
-//				if(Rx2_Buffer[0] == 0)
-//					{
-//						I2C_ZLG7290_Write(&hi2c1,0x70,ZLG_WRITE_ADDRESS1,Tx1_Buffer,1);
-//					}
-//					else
-//					{
-//						I2C_ZLG7290_Write(&hi2c1,0x70,ZLG_WRITE_ADDRESS2,Rx2_Buffer,BUFFER_SIZE2);						
-//						I2C_ZLG7290_Write(&hi2c1,0x70,ZLG_WRITE_ADDRESS1,Tx1_Buffer,1);						
-//					}
-//				break;
-//			default:
-//				break;
-//		}
-//}
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
