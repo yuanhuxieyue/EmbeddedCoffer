@@ -164,13 +164,25 @@ void ledClean();
 void hotStart();
 
 
-//backup
+//backup static
 uint8_t num1Backup[0x20] = {0, 13, 14, 15, 16, 0, 0, 0, 0, 12, 9, 8, 7, 0, 0, 0,\
 					  0, 11, 6, 5, 4, 0, 0, 0, 0, 10, 3, 2, 1, 0, 0, 0};
 uint8_t PASS_BufferBackup[8] = {0xCE, 0xEE, 0xB6, 0xB6, 0, 0, 0, 0};
 uint8_t ERROR_BufferBackup[8] = {0x9E, 0xEE, 0xEE, 0xFC, 0xEE, 0, 0, 0};
 //unsigned char seg7codeBackup[10]={ 0xFC,0x0C,0xDA,0xF2,0x66,0xB6,0xBE,0xE0,0xFE,0xE6}; //数码管字根
 uint8_t ZERO_BufferBackup[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+
+// backup dynamic
+int myPasswordBackup[6] = {1, 1, 4, 5, 1, 4};
+int tempPasswordBackup[6] = {0};
+
+// backup single
+int pBackup = 0;
+int stateBackup = 0;
+int noeBackup = 0;
+int mySecretBackup = 6;
+uint8_t check_sumBackup = 0;
+
 
 
 int main(void)
@@ -223,7 +235,7 @@ int main(void)
 		if (flag1 == 1)
 		{
 			flag1 = 0;
-			mflagInit = 0; // 用户有输入就不会记时重启
+			mflagInit = 0; // 用户有输入就不会记时重置
 
 			I2C_ZLG7290_Read(&hi2c1,0x71,0x01,Rx1_Buffer1,1);//读键值1
 			I2C_ZLG7290_Read(&hi2c1,0x71,0x01,Rx1_Buffer2,1);//读键值2
@@ -259,6 +271,13 @@ int main(void)
 							printf("重置完成,请从第一位开始重新输入密码：\n");
 							break;
 						case FLAG_KEY_SHARP:	// 确认键 #
+							// 检验
+							for(i = 0; i < 6; i++){
+								if(tempPassword[i] != tempPasswordBackup[i]){
+									printf("error\n");
+									//todo
+								}
+							}
 							if(checkPassword()){
 								state = LOGINED;
 								printf("密码正确，已登录\n");
@@ -285,6 +304,7 @@ int main(void)
 							if(p > 0){
 								p--;	// 退格
 								tempPassword[p] = 0;
+								tempPasswordBackup[p] = 0;
 								printf("已输入密码前%d位数\n当前密码为: ", p);
 								for (uint8_t i = 0; i < p; i++)
 								{
@@ -306,6 +326,7 @@ int main(void)
 								printf("more than 6\n");
 							}
 							tempPassword[p] = flag;
+							tempPasswordBackup[p] = flag;
 							p++;
 							printf("已输入密码前%d位数\n当前密码为: ", p);
 							for (uint8_t i = 0; i < p; i++)
@@ -397,6 +418,7 @@ int main(void)
 						if(p > 0){
 							p--;	// 退格
 							tempPassword[p] = 0;
+							tempPasswordBackup[p] = 0;
 							printf("已输入密码前%d位数\n当前密码为: ", p);
 							for (uint8_t i = 0; i < p; i++)
 							{
@@ -414,6 +436,7 @@ int main(void)
 							p=5;
 						}
 						tempPassword[p] = flag;
+						tempPasswordBackup[p] = 0;
 						p++;
 						printf("已输入密码前%d位数\n当前密码为: ", p);
 						for (uint8_t i = 0; i < p; i++)
@@ -613,6 +636,7 @@ void minit(){
 	ledClean();
 	mflagInit = 0;
 	flagCheckSum = 2;
+	myReset();
 }
 
 // music
