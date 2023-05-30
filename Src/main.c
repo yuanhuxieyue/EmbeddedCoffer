@@ -138,11 +138,9 @@ void Note(uint32_t us);
 #define FLAG_KEY_8 8  // 8
 #define FLAG_KEY_9 9  // 9
 
-
 // __attribute__((section (".RAM_D1"), zero_init)) int tempPassword[6] = {0};
 // __attribute__((section (".RAM_D1"), zero_init)) int state = 0;
 // __attribute__((section (".RAM_D1"), zero_init)) int noe = 0;
-
 
 int myPassword[6] = {1, 1, 4, 5, 1, 4};
 int tempPassword[6] = {0};
@@ -310,6 +308,30 @@ int main(void)
 				case FLAG_KEY_SHARP: // 确认键 #
 					// 检验
 					checkDynamic();
+					// 随机功耗
+					int tmpgh = 0;
+					switch (HAL_GetTick() % 3)
+					{
+					case 0:
+						HAL_Delay(2);
+						break;
+					case 1:
+						for (int i = 0; i < 100; i++)
+						{
+							tmpgh++;
+						}
+						break;
+					case 2:
+						for (int i = 0; i < 100; i++)
+						{
+							tmpgh = (tmpgh + 1) * 99;
+							tmpgh = tmpgh % 77;
+						}
+						break;
+					default:
+						break;
+					}
+
 					if (checkPassword())
 					{
 						state = LOGINED;
