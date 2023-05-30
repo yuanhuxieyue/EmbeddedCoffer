@@ -151,6 +151,9 @@ void myReset();
 void clearTmp();
 void displayHelp();
 
+uint8_t post_executed[0x10] = {0};
+int checkPostExecuted(int index);
+
 //LED
 uint8_t PASS_Buffer[8] = {0xCE, 0xEE, 0xB6, 0xB6, 0, 0, 0, 0};
 uint8_t ERROR_Buffer[8] = {0x9E, 0xEE, 0xEE, 0xFC, 0xEE, 0, 0, 0};
@@ -217,6 +220,7 @@ int main(void)
 	printf("\n\r-------------------------------------------------\r\n");
 	printf("\n\r 音乐保险箱测试例程 \r\n");
 	printf("\n请输入密码:\n");
+	post_executed[0] = 1;	// 第一段代码，初始化执行完毕
 	/* USER CODE END 2 */
 
 	/* Infinite loop */
@@ -228,6 +232,7 @@ int main(void)
 		/* USER CODE BEGIN 3 */
 		if (flag1 == 1)
 		{
+			post_executed[1] = 0;	// 重置第二段代码执行标志
 			flag1 = 0;
 			mflagInit = 0; // 用户有输入就不会记时重置
 
@@ -252,6 +257,10 @@ int main(void)
 				checkStatic();
 				flagCheckSum = 2;
 			}
+			if(!checkPostExecuted(1)) {	// 检查是否有代码没有执行
+				goto endNow;
+			}
+			post_executed[1] = 1;	// 第二段代码，按键扫描执行完毕
 
 			//I2C_ZLG7290_Read(&hi2c1, 0x71, 0x01, Rx1_Buffer, 1); // 读键值	FIXME 读取多次
 			printf("\n\r按键键值 = %#x\r\n", Rx1_Buffer[0]); // 想串口发送键值
@@ -280,6 +289,10 @@ int main(void)
 								clearTmp();
 								mArrtempPassword = initCheckSumArrF(tempPassword, 6);
 								mArrtempPasswordBackup = initCheckSumArrF(tempPasswordBackup, 6);
+								if(!checkPostExecuted(2)) {	// 检查是否有代码没有执行
+									goto endNow;
+								}
+								post_executed[2] = 1;	// 第三段代码，登录成功执行完毕, 也就是一定要登录成功才能执行后面的代码
 							}
 							else{
 								printf("密码错误，请重新输入\n");
@@ -337,6 +350,11 @@ int main(void)
 						}
 						break;
 				case LOGINED:	// 登录状态，可以输入密码，重置键回到未登录状态，确认键进入修改密码状态
+					if(!checkPostExecuted(2)) {	// 检查是否有代码没有执行, 这里需要完成初始化，完成按键接受，完成密码检验 否则会异常
+						post_executed[2] = 0;
+						post_executed[1] = 0;
+						goto endNow;
+					}
 					switch(flag){
 						case FLAG_KEY_1: // 输出帮助
 							displayHelp();
@@ -347,6 +365,11 @@ int main(void)
 							clearTmp();
 							mArrtempPassword = initCheckSumArrF(tempPassword, 6);
 							mArrtempPasswordBackup = initCheckSumArrF(tempPasswordBackup, 6);
+							if(!checkPostExecuted(2)) {	// 检查是否有代码没有执行
+								post_executed[2] = 0;
+								goto endNow;
+							}
+							post_executed[3] = 1;	// 第四段代码，进入修改密码状态执行完毕
 							break;
 						case FLAG_KEY_3:	// 打开保险箱
 						case FLAG_KEY_4:	// 关闭保险箱
@@ -389,6 +412,11 @@ int main(void)
 						}
 						break;
 				case CHANGEPASSWORD:	// 修改密码状态，可以输入密码，重置键回到未登录状态，确认键进入登录状态
+					if(!checkPostExecuted(3)) {	// 检查是否有代码没有执行, 这里需要完成初始化，完成按键接受，完成密码检验,在已登陆状态进入修改密码状态 否则会异常
+						post_executed[3] = 0;
+						post_executed[2] = 0;
+						goto endNow;
+					}
 					switch(flag){
 					case FLAG_KEY_STAR:	// 重置键
 						myReset();
@@ -408,7 +436,7 @@ int main(void)
 			  				{
 			  					Note(music[i]);
 			  				}
-							state = UNLOGINED;
+							state = LOGINED;	// 修改密码失败，回到登录状态	FIXME
 							clearTmp();
 							mArrtempPassword = initCheckSumArrF(tempPassword, 6);
 							mArrtempPasswordBackup = initCheckSumArrF(tempPasswordBackup, 6);
@@ -474,17 +502,18 @@ int main(void)
 
 		}
 		//随机时延
-		switch(HAL_GetTick() % 3){
-			case 0:
-				HAL_Delay(100);
-				break;
-			case 1:
-				HAL_Delay(80);
-				break;
-			case 2:
-				HAL_Delay(50);
-				break;
-		}
+		// switch(HAL_GetTick() % 3){
+		// 	case 0:
+		// 		HAL_Delay(100);
+		// 		break;
+		// 	case 1:
+		// 		HAL_Delay(80);
+		// 		break;
+		// 	case 2:
+		// 		HAL_Delay(50);
+		// 		break;
+		// }
+		HAL_Delay((HAL_GetTick() % 4) * 20);	// 随机时延
 
 		//计时重启模块
 		HAL_Delay(1);
@@ -578,6 +607,14 @@ checkSumArr initCheckSumArrF(uint8_t* marr, uint8_t mlen){
 	mstruct.mLen = mlen;
 	mstruct.checkSumCode = msum;
 	return mstruct;
+}
+int checkPostExecuted(int index){	// 检查前面的指令是否执行完毕
+	for(int i = 0; i < index; i++){
+		if(postExecuted[i] == 0){	// 有指令未执行完毕
+			return 0;
+		}
+	}
+	return 1;	// 所有指令执行完毕
 }
 
 uint8_t checkSumArrF(checkSumArr mstruct){
