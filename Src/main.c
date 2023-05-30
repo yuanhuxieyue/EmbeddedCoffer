@@ -142,8 +142,8 @@ void Note(uint32_t us);
 // __attribute__((section (".RAM_D1"), zero_init)) int state = 0;
 // __attribute__((section (".RAM_D1"), zero_init)) int noe = 0;
 
-int myPassword[6] = {1, 1, 4, 5, 1, 4};
-int tempPassword[6] = {0};
+uint8_t myPassword[6] = {1, 1, 4, 5, 1, 4};
+uint8_t tempPassword[6] = {0};
 int p = 0;
 int state = 0;
 int noe = 0;
@@ -167,10 +167,28 @@ void ledPass();
 void ledError();
 void ledClean();
 
+uint8_t LOGIN_Buffer[8] = {0x0E, 0x5C, 0x5F, 0x60, 0x76, 0, 0, 0};
+
 // 冷热启动
 void cold_start(void);
 void hot_start(void);
 uint16_t if_hot_start;
+// checksum
+checkSumArr mArrNum1;
+checkSumArr mArrNum1Backup;
+checkSumArr mArrPASS_Buffer;
+checkSumArr mArrPASS_BufferBackup;
+checkSumArr mArrERROR_Buffer;
+checkSumArr mArrERROR_BufferBackup;
+checkSumArr mArrZERO_Buffer;
+checkSumArr mArrZERO_BufferBackup;
+flagCheckSum = 2;
+
+checkSumArr mArrmyPassword;
+checkSumArr mArrmyPasswordBackup;
+checkSumArr mArrtempPassword;
+checkSumArr mArrtempPasswordBackup;
+flagCheckSumD = 0;
 
 // backup static
 uint8_t num1Backup[0x20] = {0, 13, 14, 15, 16, 0, 0, 0, 0, 12, 9, 8, 7, 0, 0, 0,
@@ -185,22 +203,8 @@ int myPasswordBackup[6] = {1, 1, 4, 5, 1, 4};
 int tempPasswordBackup[6] = {0};
 //__attribute__((section (".RAM_D1"), zero_init)) tempPasswordBackup[6] = {0};
 
-// checksum
-checkSumArr mArrNum1 = initCheckSumArrF(num1, 32);
-checkSumArr mArrNum1Backup = initCheckSumArrF(num1Backup, 32);
-checkSumArr mArrPASS_Buffer = initCheckSumArrF(PASS_Buffer, 8);
-checkSumArr mArrPASS_BufferBackup = initCheckSumArrF(PASS_BufferBackup, 8);
-checkSumArr mArrERROR_Buffer = initCheckSumArrF(ERROR_Buffer, 8);
-checkSumArr mArrERROR_BufferBackup = initCheckSumArrF(ERROR_BufferBackup, 8);
-checkSumArr mArrZERO_Buffer = initCheckSumArrF(ZERO_Buffer, 8);
-checkSumArr mArrZERO_BufferBackup = initCheckSumArrF(ZERO_BufferBackup, 8);
-flagCheckSum = 2;
-
-checkSumArr mArrmyPassword = initCheckSumArrF(myPassword, 6);
-checkSumArr mArrmyPasswordBackup = initCheckSumArrF(myPasswordBackup, 6);
-checkSumArr mArrtempPassword = initCheckSumArrF(tempPassword, 6);
-checkSumArr mArrtempPasswordBackup = initCheckSumArrF(tempPasswordBackup, 6);
-flagCheckSumD = 0;
+//sleep
+void SleepMode_Measure(void);
 
 int main(void)
 {
@@ -222,7 +226,22 @@ int main(void)
 	MX_GPIO_Init();
 	MX_I2C1_Init();
 	MX_USART1_UART_Init();
+	// checksum
+	mArrNum1 = initCheckSumArrF(num1, 32);
+	mArrNum1Backup = initCheckSumArrF(num1Backup, 32);
+	mArrPASS_Buffer = initCheckSumArrF(PASS_Buffer, 8);
+	mArrPASS_BufferBackup = initCheckSumArrF(PASS_BufferBackup, 8);
+	mArrERROR_Buffer = initCheckSumArrF(ERROR_Buffer, 8);
+	mArrERROR_BufferBackup = initCheckSumArrF(ERROR_BufferBackup, 8);
+	mArrZERO_Buffer = initCheckSumArrF(ZERO_Buffer, 8);
+	mArrZERO_BufferBackup = initCheckSumArrF(ZERO_BufferBackup, 8);
+	flagCheckSum = 2;
 
+	mArrmyPassword = initCheckSumArrF(myPassword, 6);
+	mArrmyPasswordBackup = initCheckSumArrF(myPasswordBackup, 6);
+	mArrtempPassword = initCheckSumArrF(tempPassword, 6);
+	mArrtempPasswordBackup = initCheckSumArrF(tempPasswordBackup, 6);
+	flagCheckSumD = 0;
 	// 看门狗
 	IWDG_HandleTypeDef hiwdg;
 	IWDG_Init(&hiwdg);
@@ -592,6 +611,7 @@ int main(void)
 		{
 			printf("time to restart\n\n");
 			minit();
+
 			printf("restart completed\n\n");
 		}
 	}
@@ -848,6 +868,21 @@ void Note(uint32_t us)
 		HAL_GPIO_WritePin(GPIOG, GPIO_PIN_6, GPIO_PIN_RESET);
 		Delay_us(us);
 	}
+}
+
+void SleepMode_Measure(void)
+{
+	// 挂起（暂停）系统时钟中断
+	HAL_SuspendTick();
+
+	/* 进入睡眠模式， 任意中断唤醒 */
+	HAL_PWR_EnterSLEEPMode(PWR_MAINREGULATOR_ON, PWR_SLEEPENTRY_WFI);
+
+	/* 恢复系统时钟中断 */
+	HAL_ResumeTick();
+
+	/* Add a delay of 200ms after exit from Sleep mode */
+	HAL_Delay(200);
 }
 
 /** System Clock Configuration
