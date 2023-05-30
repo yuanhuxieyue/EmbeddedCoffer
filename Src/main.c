@@ -161,6 +161,10 @@ void ledPass();
 void ledError();
 void ledClean();
 
+// 冷热启动
+void cold_start(void);
+void hot_start(void);
+uint16_t if_hot_start;
 
 //backup static
 uint8_t num1Backup[0x20] = {0, 13, 14, 15, 16, 0, 0, 0, 0, 12, 9, 8, 7, 0, 0, 0,\
@@ -216,6 +220,13 @@ int main(void)
 	IWDG_HandleTypeDef hiwdg;
     IWDG_Init(&hiwdg);
     HAL_IWDG_Start(&hiwdg);
+	//冷热启动
+	if(if_hot_start != 0x1145){
+		cold_start();
+	}
+	else {
+		hot_start();
+	}
 
 	ledClean();
 	/* USER CODE BEGIN 2 */
@@ -670,6 +681,18 @@ void checkDynamic(){
 		restoreBackupArray(myPasswordBackup, myPassword, 6);
 	}
 }
+// 冷热启动
+void cold_start(void) {
+	HAL_Delay(1000);
+	clearTmp();
+	state = 0;
+	if_hot_start = 0x1145;
+}
+void hot_start(void) {
+	return;
+}
+
+
 
 // restart
 void minit(){
