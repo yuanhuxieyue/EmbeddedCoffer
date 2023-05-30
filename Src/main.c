@@ -504,6 +504,18 @@ int main(void)
 			endNow:		
 
 		}
+		//随机时延
+		switch(HAL_GetTick() % 3){
+			case 0:
+				HAL_Delay(100);
+				break;
+			case 1:
+				HAL_Delay(80);
+				break;
+			case 2:
+				HAL_Delay(50);
+				break;
+		}
 
 		//计时重启模块
 		HAL_Delay(1);
