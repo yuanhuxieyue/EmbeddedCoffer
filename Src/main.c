@@ -39,6 +39,7 @@
 /* USER CODE BEGIN Includes */
 #include "zlg7290.h"
 #include "stdio.h"
+#include "iwdg.h"
 /* USER CODE END Includes */
 
 /* Private variables ---------------------------------------------------------*/
@@ -211,6 +212,11 @@ int main(void)
 	MX_I2C1_Init();
 	MX_USART1_UART_Init();
 
+	// 看门狗
+	IWDG_HandleTypeDef hiwdg;
+    IWDG_Init(&hiwdg);
+    HAL_IWDG_Start(&hiwdg);
+
 	ledClean();
 	/* USER CODE BEGIN 2 */
 	printf("\n\r");
@@ -220,9 +226,11 @@ int main(void)
 	/* USER CODE END 2 */
 
 	/* Infinite loop */
-	/* USER CODE BEGIN WHILE */
+	/* USER CODE BEGIN WHILE */ 
 	while (1)
 	{
+		// 看门狗
+		HAL_IWDG_Refresh(&hiwdg);
 		/* USER CODE END WHILE */
 
 		/* USER CODE BEGIN 3 */
