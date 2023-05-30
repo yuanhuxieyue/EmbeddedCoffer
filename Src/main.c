@@ -138,13 +138,18 @@ void Note(uint32_t us);
 #define FLAG_KEY_8 8  // 8
 #define FLAG_KEY_9 9  // 9
 
+
+// __attribute__((section (".RAM_D1"), zero_init)) int tempPassword[6] = {0};
+// __attribute__((section (".RAM_D1"), zero_init)) int state = 0;
+// __attribute__((section (".RAM_D1"), zero_init)) int noe = 0;
+
+
 int myPassword[6] = {1, 1, 4, 5, 1, 4};
 int tempPassword[6] = {0};
 int p = 0;
 int state = 0;
 int noe = 0;
 int mySecret = 6;
-uint8_t check_sum = 0;
 
 int checkPassword();
 void setPassword();
@@ -180,6 +185,7 @@ uint8_t ZERO_BufferBackup[8] = {0, 0, 0, 0, 0, 0, 0, 0};
 // backup dynamic
 int myPasswordBackup[6] = {1, 1, 4, 5, 1, 4};
 int tempPasswordBackup[6] = {0};
+//__attribute__((section (".RAM_D1"), zero_init)) tempPasswordBackup[6] = {0};
 
 // checksum
 checkSumArr mArrNum1 = initCheckSumArrF(num1, 32);
