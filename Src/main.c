@@ -800,7 +800,7 @@ void checkDynamic()
 // ¿‰»»∆Ù∂Ø
 void cold_start(void)
 {
-	HAL_Delay(1000);
+	HAL_Delay(200);
 	myReset();
 	if_hot_start = 0x1145;
 }
