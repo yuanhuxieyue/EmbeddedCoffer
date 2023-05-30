@@ -91,8 +91,10 @@ typedef struct {
 checkSumArr initCheckSumArrF(uint8_t* marr, uint8_t mlen);
 void restoreBackupArray(uint8_t* marr, uint8_t* marrBackup, uint8_t mlen);
 void checkStatic();
+void checkDynamic();
 uint8_t checkSumArrF(checkSumArr mstruct);
 uint8_t flagCheckSum;
+uint8_t flagCheckSumD;
 
 // restart
 uint16_t mflagInit = 0;
@@ -177,13 +179,28 @@ int myPasswordBackup[6] = {1, 1, 4, 5, 1, 4};
 int tempPasswordBackup[6] = {0};
 
 // backup single
-int pBackup = 0;
-int stateBackup = 0;
-int noeBackup = 0;
-int mySecretBackup = 6;
-uint8_t check_sumBackup = 0;
+// int pBackup = 0;
+// int stateBackup = 0;
+// int noeBackup = 0;
+// int mySecretBackup = 6;
+// uint8_t check_sumBackup = 0;
 
+// checksum
+checkSumArr mArrNum1 = initCheckSumArrF(num1, 32);
+checkSumArr mArrNum1Backup = initCheckSumArrF(num1Backup, 32);
+checkSumArr mArrPASS_Buffer = initCheckSumArrF(PASS_Buffer, 8);
+checkSumArr mArrPASS_BufferBackup = initCheckSumArrF(PASS_BufferBackup, 8);
+checkSumArr mArrERROR_Buffer = initCheckSumArrF(ERROR_Buffer, 8);
+checkSumArr mArrERROR_BufferBackup = initCheckSumArrF(ERROR_BufferBackup, 8);
+checkSumArr mArrZERO_Buffer = initCheckSumArrF(ZERO_Buffer, 8);
+checkSumArr mArrZERO_BufferBackup = initCheckSumArrF(ZERO_BufferBackup, 8);
+flagCheckSum = 2;
 
+checkSumArr mArrmyPassword = initCheckSumArrF(myPassword, 6);
+checkSumArr mArrmyPasswordBackup = initCheckSumArrF(myPasswordBackup, 6);
+checkSumArr mArrtempPassword = initCheckSumArrF(tempPassword, 6);
+checkSumArr mArrtempPasswordBackup = initCheckSumArrF(tempPasswordBackup, 6);
+flagCheckSumD = 0;
 
 int main(void)
 {
@@ -206,16 +223,22 @@ int main(void)
 	MX_I2C1_Init();
 	MX_USART1_UART_Init();
 
-	// checksum
-	checkSumArr mArrNum1 = initCheckSumArrF(num1, 32);
-	checkSumArr mArrNum1Backup = initCheckSumArrF(num1Backup, 32);
-	checkSumArr mArrPASS_Buffer = initCheckSumArrF(PASS_Buffer, 8);
-	checkSumArr mArrPASS_BufferBackup = initCheckSumArrF(PASS_BufferBackup, 8);
-	checkSumArr mArrERROR_Buffer = initCheckSumArrF(ERROR_Buffer, 8);
-	checkSumArr mArrERROR_BufferBackup = initCheckSumArrF(ERROR_BufferBackup, 8);
-	checkSumArr mArrZERO_Buffer = initCheckSumArrF(ZERO_Buffer, 8);
-	checkSumArr mArrZERO_BufferBackup = initCheckSumArrF(ZERO_BufferBackup, 8);
-	flagCheckSum = 2;
+	// // checksum
+	// checkSumArr mArrNum1 = initCheckSumArrF(num1, 32);
+	// checkSumArr mArrNum1Backup = initCheckSumArrF(num1Backup, 32);
+	// checkSumArr mArrPASS_Buffer = initCheckSumArrF(PASS_Buffer, 8);
+	// checkSumArr mArrPASS_BufferBackup = initCheckSumArrF(PASS_BufferBackup, 8);
+	// checkSumArr mArrERROR_Buffer = initCheckSumArrF(ERROR_Buffer, 8);
+	// checkSumArr mArrERROR_BufferBackup = initCheckSumArrF(ERROR_BufferBackup, 8);
+	// checkSumArr mArrZERO_Buffer = initCheckSumArrF(ZERO_Buffer, 8);
+	// checkSumArr mArrZERO_BufferBackup = initCheckSumArrF(ZERO_BufferBackup, 8);
+	// flagCheckSum = 2;
+
+	// checkSumArr mArrmyPassword = initCheckSumArrF(myPassword, 6);
+	// checkSumArr mArrmyPasswordBackup = initCheckSumArrF(myPasswordBackup, 6);
+	// checkSumArr mArrtempPassword = initCheckSumArrF(tempPassword, 6);
+	// checkSumArr mArrtempPasswordBackup = initCheckSumArrF(tempPasswordBackup, 6);
+	// flagCheckSumD = 0;
 
 	ledClean();
 	/* USER CODE BEGIN 2 */
@@ -269,15 +292,12 @@ int main(void)
 						case FLAG_KEY_STAR:	// 重置键 *
 							myReset();
 							printf("重置完成,请从第一位开始重新输入密码：\n");
+							mArrtempPassword = initCheckSumArrF(tempPassword, 6);
+							mArrtempPasswordBackup = initCheckSumArrF(tempPasswordBackup, 6);
 							break;
 						case FLAG_KEY_SHARP:	// 确认键 #
 							// 检验
-							for(i = 0; i < 6; i++){
-								if(tempPassword[i] != tempPasswordBackup[i]){
-									printf("error\n");
-									//todo
-								}
-							}
+							checkDynamic();
 							if(checkPassword()){
 								state = LOGINED;
 								printf("密码正确，已登录\n");
@@ -287,10 +307,14 @@ int main(void)
 									Note(music[i]);
 								}
 								clearTmp();
+								mArrtempPassword = initCheckSumArrF(tempPassword, 6);
+								mArrtempPasswordBackup = initCheckSumArrF(tempPasswordBackup, 6);
 							}
 							else{
 								printf("密码错误，请重新输入\n");
 								clearTmp();
+								mArrtempPassword = initCheckSumArrF(tempPassword, 6);
+								mArrtempPasswordBackup = initCheckSumArrF(tempPasswordBackup, 6);
 								ledError();
 								for (uint8_t i = 0; i < 3; i++)
 							{
@@ -305,6 +329,8 @@ int main(void)
 								p--;	// 退格
 								tempPassword[p] = 0;
 								tempPasswordBackup[p] = 0;
+								mArrtempPassword = initCheckSumArrF(tempPassword, 6);
+								mArrtempPasswordBackup = initCheckSumArrF(tempPasswordBackup, 6);
 								printf("已输入密码前%d位数\n当前密码为: ", p);
 								for (uint8_t i = 0; i < p; i++)
 								{
@@ -327,6 +353,8 @@ int main(void)
 							}
 							tempPassword[p] = flag;
 							tempPasswordBackup[p] = flag;
+							mArrtempPassword = initCheckSumArrF(tempPassword, 6);
+							mArrtempPasswordBackup = initCheckSumArrF(tempPasswordBackup, 6);
 							p++;
 							printf("已输入密码前%d位数\n当前密码为: ", p);
 							for (uint8_t i = 0; i < p; i++)
@@ -346,6 +374,8 @@ int main(void)
 							state = CHANGEPASSWORD;
 							printf("进入修改密码状态，需要输入6位密码，输入完成后按#确认\n");
 							clearTmp();
+							mArrtempPassword = initCheckSumArrF(tempPassword, 6);
+							mArrtempPasswordBackup = initCheckSumArrF(tempPasswordBackup, 6);
 							break;
 						case FLAG_KEY_3:	// 打开保险箱
 						case FLAG_KEY_4:	// 关闭保险箱
@@ -366,6 +396,8 @@ int main(void)
 						case FLAG_KEY_0:	// 退出登录
 							state = UNLOGINED;
 							myReset();
+							mArrtempPassword = initCheckSumArrF(tempPassword, 6);
+							mArrtempPasswordBackup = initCheckSumArrF(tempPasswordBackup, 6);
 							printf("已退出登录\n");
 							for(uint8_t i = 0; i < 3; i++)
 							{
@@ -375,10 +407,14 @@ int main(void)
 							myReset();
 							printf("重置完成,请从第一位开始重新输入密码：\n");
 						  	clearTmp();
+							mArrtempPassword = initCheckSumArrF(tempPassword, 6);
+							mArrtempPasswordBackup = initCheckSumArrF(tempPasswordBackup, 6);
 							break;
 						default:
 							printf("输入错误，请重新输入\n");
 							clearTmp();
+							mArrtempPassword = initCheckSumArrF(tempPassword, 6);
+							mArrtempPasswordBackup = initCheckSumArrF(tempPasswordBackup, 6);
 						}
 						break;
 				case CHANGEPASSWORD:	// 修改密码状态，可以输入密码，重置键回到未登录状态，确认键进入登录状态
@@ -387,10 +423,14 @@ int main(void)
 						myReset();
 						printf("重置完成,请从第一位开始重新输入密码：\n");
 					  	clearTmp();
+						mArrtempPassword = initCheckSumArrF(tempPassword, 6);
+						mArrtempPasswordBackup = initCheckSumArrF(tempPasswordBackup, 6);
 						break;
 					case FLAG_KEY_SHARP:	// 确认键,如果位数不够6位，不会修改密码
 						if(p == 6){
 							setPassword();
+							mArrmyPassword = initCheckSumArrF(myPassword, 6);
+							mArrmyPasswordBackup = initCheckSumArrF(myPasswordBackup, 6);
 							printf("密码修改完成\n");
 							ledClean();
 							for (uint8_t i = 0; i < 3; i++)
@@ -399,11 +439,14 @@ int main(void)
 			  				}
 							state = UNLOGINED;
 							clearTmp();
+							mArrtempPassword = initCheckSumArrF(tempPassword, 6);
+							mArrtempPasswordBackup = initCheckSumArrF(tempPasswordBackup, 6);
 						}
 						else{
 							printf("密码位数不够6位，请重新输入\n");
 							clearTmp();
-			
+							mArrtempPassword = initCheckSumArrF(tempPassword, 6);
+							mArrtempPasswordBackup = initCheckSumArrF(tempPasswordBackup, 6);
 						}
 						p = 0;	// 重置密码输入位数
 						break;
@@ -411,6 +454,8 @@ int main(void)
 						state = LOGINED;
 						printf("退出修改密码状态，已进入登录状态\n");
 						clearTmp();
+						mArrtempPassword = initCheckSumArrF(tempPassword, 6);
+						mArrtempPasswordBackup = initCheckSumArrF(tempPasswordBackup, 6);
 						p = 0;	// 重置密码输入位数
 						displayHelp();
 						break;
@@ -419,6 +464,8 @@ int main(void)
 							p--;	// 退格
 							tempPassword[p] = 0;
 							tempPasswordBackup[p] = 0;
+							mArrtempPassword = initCheckSumArrF(tempPassword, 6);
+							mArrtempPasswordBackup = initCheckSumArrF(tempPasswordBackup, 6);
 							printf("已输入密码前%d位数\n当前密码为: ", p);
 							for (uint8_t i = 0; i < p; i++)
 							{
@@ -436,7 +483,9 @@ int main(void)
 							p=5;
 						}
 						tempPassword[p] = flag;
-						tempPasswordBackup[p] = 0;
+						tempPasswordBackup[p] = flag;
+						mArrtempPassword = initCheckSumArrF(tempPassword, 6);
+						mArrtempPasswordBackup = initCheckSumArrF(tempPasswordBackup, 6);
 						p++;
 						printf("已输入密码前%d位数\n当前密码为: ", p);
 						for (uint8_t i = 0; i < p; i++)
@@ -515,6 +564,7 @@ void setPassword()
 	for(; i < 6; i++)
 	{
 		myPassword[i] = tempPassword[i];
+		myPasswordBackup[i] = tempPassword[i]
 	}
 }
 void clearTmp(){
@@ -522,6 +572,7 @@ void clearTmp(){
 	for(; i < 6; i++)
 	{
 		tempPassword[i] = 0;
+		tempPasswordBackup[i] = 0;
 	}
 }
 
@@ -617,6 +668,29 @@ void checkStatic(){
 	if (flagCheckSum == 1){
 		printf("checkSumErrorMArr1");
 		restoreBackupArray(ZERO_BufferBackup, ZERO_Buffer, 8);
+	}
+}
+
+void checkDynamic(){
+	flagCheckSumD = checkSumArrF(mArrtempPassword);
+	if (flagCheckSumD == 1){
+		printf("checkSumErrorMArr1");
+		restoreBackupArray(tempPassword, tempPasswordBackup, 6);
+	}
+	flagCheckSumD = checkSumArrF(mArrtempPasswordBackup);
+	if (flagCheckSumD == 1){
+		printf("checkSumErrorMArr1");
+		restoreBackupArray(tempPasswordBackup, tempPassword, 6);
+	}
+	flagCheckSumD = checkSumArrF(mArrmyPassword);
+	if (flagCheckSumD == 1){
+		printf("checkSumErrorMArr1");
+		restoreBackupArray(myPassword, myPasswordBackup, 6);
+	}
+	flagCheckSumD = checkSumArrF(mArrmyPasswordBackup);
+	if (flagCheckSumD == 1){
+		printf("checkSumErrorMArr1");
+		restoreBackupArray(myPasswordBackup, myPassword, 6);
 	}
 }
 
