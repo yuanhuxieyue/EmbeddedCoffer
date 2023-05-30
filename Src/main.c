@@ -150,8 +150,6 @@ void setPassword();
 void myReset();
 void clearTmp();
 void displayHelp();
-uint8_t calculateCheckSum(uint8_t *data, uint8_t len, uint8_t start_sum);
-uint8_t calculateAllCheckSum();	// TODO
 
 //LED
 uint8_t PASS_Buffer[8] = {0xCE, 0xEE, 0xB6, 0xB6, 0, 0, 0, 0};
@@ -161,9 +159,6 @@ uint8_t ZERO_Buffer[8] = {0, 0, 0, 0, 0, 0, 0, 0};
 void ledPass();
 void ledError();
 void ledClean();
-
-//hot start
-void hotStart();
 
 
 //backup static
@@ -177,13 +172,6 @@ uint8_t ZERO_BufferBackup[8] = {0, 0, 0, 0, 0, 0, 0, 0};
 // backup dynamic
 int myPasswordBackup[6] = {1, 1, 4, 5, 1, 4};
 int tempPasswordBackup[6] = {0};
-
-// backup single
-// int pBackup = 0;
-// int stateBackup = 0;
-// int noeBackup = 0;
-// int mySecretBackup = 6;
-// uint8_t check_sumBackup = 0;
 
 // checksum
 checkSumArr mArrNum1 = initCheckSumArrF(num1, 32);
@@ -222,23 +210,6 @@ int main(void)
 	MX_GPIO_Init();
 	MX_I2C1_Init();
 	MX_USART1_UART_Init();
-
-	// // checksum
-	// checkSumArr mArrNum1 = initCheckSumArrF(num1, 32);
-	// checkSumArr mArrNum1Backup = initCheckSumArrF(num1Backup, 32);
-	// checkSumArr mArrPASS_Buffer = initCheckSumArrF(PASS_Buffer, 8);
-	// checkSumArr mArrPASS_BufferBackup = initCheckSumArrF(PASS_BufferBackup, 8);
-	// checkSumArr mArrERROR_Buffer = initCheckSumArrF(ERROR_Buffer, 8);
-	// checkSumArr mArrERROR_BufferBackup = initCheckSumArrF(ERROR_BufferBackup, 8);
-	// checkSumArr mArrZERO_Buffer = initCheckSumArrF(ZERO_Buffer, 8);
-	// checkSumArr mArrZERO_BufferBackup = initCheckSumArrF(ZERO_BufferBackup, 8);
-	// flagCheckSum = 2;
-
-	// checkSumArr mArrmyPassword = initCheckSumArrF(myPassword, 6);
-	// checkSumArr mArrmyPasswordBackup = initCheckSumArrF(myPasswordBackup, 6);
-	// checkSumArr mArrtempPassword = initCheckSumArrF(tempPassword, 6);
-	// checkSumArr mArrtempPasswordBackup = initCheckSumArrF(tempPasswordBackup, 6);
-	// flagCheckSumD = 0;
 
 	ledClean();
 	/* USER CODE BEGIN 2 */
@@ -499,8 +470,6 @@ int main(void)
 				case ADDLOCKCONTAINER:	// 添加物品
 						break;
 			}
-			//I2C_ZLG7290_Read(&hi2c1, 0x71, 0x10, Rx2_Buffer, 8); // 读8位数码管
-			//switch_flag();	// 扫描到相应的按键并且向数码管写进数值
 			endNow:		
 
 		}
@@ -531,18 +500,6 @@ int main(void)
 	/* USER CODE END 3 */
 }
 
-uint8_t calculateCheckSum(uint8_t *data, uint8_t len, uint8_t start_sum)
-{
-	for(uint8_t i = 0; i < len; i++)	// 异或校验
-	{
-		start_sum ^= data[i];
-	}
-	return start_sum;
-}
-uint8_t calculateAllCheckSum()
-{
-	uint8_t check_sum = 0;
-}
 void displayHelp(){
 	printf("当前为登录状态\n\n");
 	printf("输入1：输出帮助\n\n");
@@ -746,12 +703,6 @@ void Note(uint32_t us)
 	}
 }
 
-//hot start
-void hotStart(){
-	minit();
-	//todo
-
-}
 
 /** System Clock Configuration
  */
